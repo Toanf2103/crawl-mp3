@@ -1,0 +1,77 @@
+{
+  "uid": "users",
+  "layouts": {
+    "displayName": "User",
+    "creatable": true,
+    "editable": true,
+    "filterable": [
+      [
+        { "label": "Id User", "placeholder": "Id", "name": "id", "size": 6, "type": "string" },
+        { "label": "Email", "placeholder": "Email", "name": "email", "size": 5, "type": "string" },
+        { "label": "Confirmed", "name": "confirmed", "size": 1, "type": "boolean" }
+      ],
+      [{ "label": "Created At", "name": "createdAt", "size": 6, "type": "date" }]
+    ],
+    "list": [
+      { "key": "fullName", "dataIndex": "fullName", "title": "Full Name", "align": "left" },
+      { "key": "email", "dataIndex": "email", "title": "Email", "align": "left" },
+      { "key": "phone", "dataIndex": "phone", "title": "Phone", "align": "left" },
+      { "key": "confirmed", "dataIndex": "confirmed", "title": "Confirmed", "align": "center", "note": "render-bool" },
+      { "key": "blocked", "dataIndex": "blocked", "title": "Blocked", "align": "left", "note": "render-bool" },
+      { "key": "createdAt", "dataIndex": "createdAt", "title": "Created At", "align": "center", "note": "render-date" }
+    ],
+    "edit": [
+      [
+        {
+          "label": "Full Name",
+          "placeholder": "Full Name",
+          "name": "fullName",
+          "size": 6,
+          "type": "string",
+          "disabled": true
+        },
+        {
+          "label": "Email",
+          "placeholder": "Email",
+          "name": "email",
+          "size": 6,
+          "type": "string",
+          "disabled": true,
+          "regex": ["^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", "i"]
+        }
+      ],
+      [
+        {
+          "label": "Phone",
+          "placeholder": "Phone",
+          "name": "phone",
+          "size": 6,
+          "type": "string",
+          "disabled": true,
+          "regex": ["^\\d{8,16}$", "i"]
+        },
+        { "label": "Blocked", "name": "blocked", "size": 2, "type": "boolean" }
+      ],
+      [
+        {
+          "label": "Code Secure",
+          "placeholder": "Code Secure",
+          "name": "codeSecure",
+          "size": 6,
+          "required": true,
+          "type": "auto-fill",
+          "valueTarget": "users/code-secure"
+        },
+        {
+          "label": "Balance",
+          "placeholder": "Balance",
+          "name": "balance",
+          "size": 6,
+          "type": "string",
+          "regex": ["^(0|[1-9]\\d*)(\\.\\d+)?$", "i"]
+        }
+      ]
+    ],
+    "defaultValue": { "confirmed": false, "blocked": false, "balance": 0 }
+  }
+}

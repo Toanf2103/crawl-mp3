@@ -1,0 +1,15 @@
+.tmp
+.vscode
+node_modules
+*example
+build
+.cache
+dist
+*sample
+verify
+static/images
+static/robots
+static/headers
+static/sitemap
+tmp
+*bk
