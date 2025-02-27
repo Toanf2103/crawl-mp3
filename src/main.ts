@@ -2,6 +2,7 @@ import dayjs from 'dayjs';
 import 'dotenv/config';
 
 import { ValidationPipe } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -25,7 +26,9 @@ const startApp = async () => {
   SwaggerModule.setup('api', app, document);
 
   app.enableCors();
-  await app.listen(33333, '0.0.0.0');
+  const configService = app.get(ConfigService);
+  const port = configService.get<number>('port') || 33333;
+  await app.listen(port, '0.0.0.0');
 };
 
 async function bootstrap() {
