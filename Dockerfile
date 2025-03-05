@@ -8,6 +8,9 @@ COPY ./src ./src
 COPY ./nest-cli.json ./nest-cli.json
 COPY ./tsconfig.json ./tsconfig.json
 COPY ./tsconfig.build.json ./tsconfig.build.json
+# Thêm các file Prisma ở bước này để có thể generate trước khi build
+COPY ./prisma ./prisma
+RUN yarn prisma generate
 RUN yarn build
 
 FROM node:18-alpine as modules
@@ -33,4 +36,5 @@ RUN chown -R 1001:1001 /app
 
 USER 1001
 
+EXPOSE 3000
 CMD ["node", "dist/main"]

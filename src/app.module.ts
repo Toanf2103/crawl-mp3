@@ -11,7 +11,7 @@ import {
   RequestMethod,
 } from '@nestjs/common';
 import { APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
-import { JwtModule, JwtService } from '@nestjs/jwt';
+import { JwtModule } from '@nestjs/jwt';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { FastifyReply, FastifyRequest } from 'fastify';
 import { WINSTON_MODULE_PROVIDER, WinstonModule } from 'nest-winston';
@@ -19,13 +19,15 @@ import { parse } from 'qs';
 import { format } from 'winston';
 import { StaticController } from './static/static.controller';
 
-import { ConfigModule } from '@nestjs/config';
+import { BullModule } from '@nestjs/bull';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import type { Cache } from 'cache-manager';
+import bullConfig from './config/bull.config';
+import redisConfig from './config/redis.config';
 import { appConfig } from './modules/base/config';
 import { ExistsConstraint } from './modules/base/validators/exist.validator';
 import { IsSameAsConstraint } from './modules/base/validators/is-same-as.validator';
 import { IsUniqueConstraint } from './modules/base/validators/is-unique.validator';
-import { CmsModule } from './modules/cms/cms.module';
 import { LandingModule } from './modules/landing/landing.module';
 
 const DailyRotateFile = require('winston-daily-rotate-file');
@@ -97,45 +99,32 @@ class PaginationMiddleware implements NestMiddleware {
   }
 }
 
-@Injectable()
-class JwtMiddleware implements NestMiddleware {
-  constructor(private jwtService: JwtService) {}
-  async use(req: FastifyRequest, res: FastifyReply, next: () => any) {
-    try {
-      const [type, token] = req.headers.authorization?.split(' ') ?? [];
-      if (type !== 'Bearer' || !token) {
-        next();
-        return;
-      }
-      const payload = await this.jwtService.verifyAsync(token, {
-        secret: process.env.SECRET_TOKEN || 'SECRET_TOKEN',
-      });
-      req['user'] = {
-        id: payload.id,
-      };
-    } catch (e) {
-      console.log(e);
-    }
-    next();
-  }
-}
-
 @Module({
   imports: [
-    CmsModule,
     LandingModule,
     JwtModule.register({ global: true, signOptions: { expiresIn: '1h' } }),
     CacheModule.registerAsync({
       isGlobal: true,
-      useFactory: async () => {
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => {
         const ttl = parseInt(process.env.REDIS_TTL ?? '30000');
         const config: CacheManagerOptions = { ttl };
+
+        // Check if Redis is configured
         if (process.env.REDIS_HOST) {
           const { redisStore } = await import('cache-manager-redis-yet');
-          config.store = await redisStore({ url: process.env.REDIS_HOST, ttl });
+          const redisConfig = configService.get('redis');
+
+          // Use the URL from our redis config
+          config.store = await redisStore({
+            url: redisConfig.url,
+            ttl,
+          });
         }
+
         return config;
       },
+      inject: [ConfigService],
     }),
     ThrottlerModule.forRoot([
       {
@@ -178,7 +167,20 @@ class JwtMiddleware implements NestMiddleware {
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
-      load: [appConfig],
+      load: [appConfig, bullConfig, redisConfig],
+    }),
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: () => {
+        const password = encodeURIComponent(process.env.REDIS_PASSWORD || '');
+        const redisUrl = `redis://:${password}@${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`;
+        console.log('Connecting with Redis URL:', redisUrl);
+
+        return {
+          redis: redisUrl,
+        };
+      },
+      inject: [ConfigService],
     }),
   ],
   providers: [
@@ -193,7 +195,6 @@ class JwtMiddleware implements NestMiddleware {
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer.apply(LoggerMiddleware).forRoutes({ path: '*', method: RequestMethod.ALL });
-    consumer.apply(JwtMiddleware).forRoutes({ path: '*', method: RequestMethod.ALL });
     consumer.apply(PaginationMiddleware).forRoutes({ path: '*', method: RequestMethod.GET });
   }
 }

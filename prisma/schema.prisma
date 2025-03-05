@@ -2,184 +2,61 @@ generator client {
   provider = "prisma-client-js"
 }
 
+enum TaskStatus {
+  PENDING
+  QUEUED
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
 datasource db {
   provider = "mongodb"
-  url      = "mongodb+srv://kutoanden6521:kutoan1346@cluster0.aoxwcrg.mongodb.net/sample_mflix?retryWrites=true&w=majority&appName=Cluster0"
+  url      = "mongodb+srv://kutoan3478:kutoan1346@cluster0.na1hd.mongodb.net/mp3"
 }
 
-type ArticlesAuthor {
-  avatar    String?
-  createdAt String
-  name      String?
-  slug      String?
+model pages {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  href       String   @unique
+  title      String?
+  slug       String?
+  pageNumber Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  tasks      taskCrawls[]
 }
 
-type CoursesCategory {
-  name String
-  slug String
+model taskCrawls {
+  id         String     @id @default(auto()) @map("_id") @db.ObjectId
+  pageId     String     @db.ObjectId
+  link       String
+  page       pages      @relation(fields: [pageId], references: [id])
+  status     TaskStatus @default(PENDING)
+  result     String?    // Thêm trường này để lưu kết quả
+  error      String?    // Thêm trường này để lưu lỗi
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
 }
 
-type CoursesOriginal {
-  logo String
-  name String
-}
-
-type CoursesOther {
-  cc_source            String
-  cc_source_id         Int
-  cc_source_section    String
-  cc_source_slug       String
-  cc_source_title      String
-  course_avg_rating    Float
-  course_certificate   Boolean
-  course_id            Int
-  course_institution   String
-  course_is_classroom  Boolean
-  course_is_free       Boolean
-  course_is_university Boolean
-  course_language      String
-  course_level         String
-  course_name          String
-  course_num_rating    Int
-  course_provider      String
-  course_slug          String
-  course_subject       String
-  course_type          String
-}
-
-type CoursesSubCategories {
-  name String
-  slug String
-}
-
-type CoursesSubCategory {
-  name String?
-  slug String
-}
-
-type CoursesTags {
-  name String
-  slug String
-}
-
-type CoursesTrailer {
-  img     String?
-  src     String?
-  srcsets String[]
-  type    String?
-  url     String?
-}
-
-type CoursesVia {
-  name String
-  slug String
-}
-
-type LearnListsCourses {
-  nameCourse String
-}
-
-model articles {
-  id            String         @id @default(auto()) @map("_id") @db.ObjectId
-  author        ArticlesAuthor
-  content       String
-  describe      String
-  image         String?
-  slug          String
-  /// Could not determine type: the field only had null or empty values in the sample set.
-  subCategories Json?
-  /// Could not determine type: the field only had null or empty values in the sample set.
-  tags          Json?
-  title         String
-  createdAt DateTime? @default(now())
-}
-
-model careers {
-  id   String @id @default(auto()) @map("_id") @db.ObjectId
-  name String
-}
-
-model cities {
-  id   String @id @default(auto()) @map("_id") @db.ObjectId
-  name String
-}
-
-model courses {
-  id            String                 @id @default(auto()) @map("_id") @db.ObjectId
-  category      CoursesCategory
-  duration      String
-  original      CoursesOriginal
-  other         CoursesOther
-  overview      String
-  describe      String?
-  ratings       Int
-  review        Int?
-  slug          String
-  subCategories CoursesSubCategories[]
-  subCategory   CoursesSubCategory
-  subTitles     String[]
-  tags          CoursesTags[]
-  taughtBy      String
-  title         String
-  trailer       CoursesTrailer
-  via           CoursesVia
-}
-
-model learnLists {
-  id       String              @id @default(auto()) @map("_id") @db.ObjectId
-  courses  LearnListsCourses[]
-  describe String
-  status   String
-  title    String
-  userId   String
-}
-
-model universities {
-  id   String @id @default(auto()) @map("_id") @db.ObjectId
-  name String
-  imageUrl String?
-  slug String?
-  imageAlt String?
-}
-
-model providers {
-  id   String @id @default(auto()) @map("_id") @db.ObjectId
-  name String
-  imageUrl String?
-  slug String?
-  imageAlt String?
-}
-
-model users {
-  id           String   @id @default(auto()) @map("_id") @db.ObjectId
-  DOB          DateTime? @db.Date
-  OTP          String?
-  careers      String[]
-  cityId       String?
-  educations   String[]
-  emailAddress String
-  name         String
-  password     String
-  phoneNumber  String?
-  is_verify    Boolean?
-}
-
-model subjects {
-  id    String   @id @default(auto()) @map("_id") @db.ObjectId
-  title  String
-  imageUrl String?
-  imageAlt String?
-  slug String?
-  topic String?
-  describe String?
-  follow Int?
-  quantityCourses Int?
-}
-
-model institutions {
-  id    String   @id @default(auto()) @map("_id") @db.ObjectId
-  name  String
-  imageUrl String?
-  imageAlt String?
-  slug String?
+model songs {
+  id         String     @id @default(auto()) @map("_id") @db.ObjectId
+  singers    String[]   @default([])
+  xmlURL     String?
+  lyricHTML  String?
+  title      String
+  time       String?
+  creator    String?
+  location   String?
+  locationHQ   String?
+  hasHQ   String?
+  info   String?
+  lyric   String?
+  bgimage   String?
+  avatar   String?
+  coverimage   String?
+  newtab   String?
+  kbit   String?
+  key   String?
+  seeking   String?
+  isStream   String?
 }
