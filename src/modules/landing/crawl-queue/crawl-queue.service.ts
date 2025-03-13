@@ -15,10 +15,16 @@ export class CrawlQueueService implements OnModuleInit {
   private readonly logger = new Logger(CrawlQueueService.name);
 
   constructor(@InjectQueue('crawl-queue') private crawlQueue: Queue) {
-    // Tạo kết nối Redis riêng để xử lý khóa
+    // Get Redis auth config
+    const password = process.env.REDIS_PASSWORD || '';
+    const username = process.env.REDIS_USERNAME || (password ? 'default' : undefined);
+
+    // Create Redis client with authentication
     this.redisClient = new Redis({
       host: process.env.REDIS_HOST || 'localhost',
       port: parseInt(process.env.REDIS_PORT || '6379'),
+      username: username,
+      password: password || undefined,
     });
   }
 

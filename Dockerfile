@@ -1,40 +1,39 @@
-FROM node:18-alpine as builder
+# Sử dụng Node.js làm base image
+FROM node:18-alpine AS builder
 
 WORKDIR /app
-COPY ./package.json ./yarn.lock ./
 
-RUN yarn config set network-timeout 600000 -g && yarn
-COPY ./src ./src
-COPY ./nest-cli.json ./nest-cli.json
-COPY ./tsconfig.json ./tsconfig.json
-COPY ./tsconfig.build.json ./tsconfig.build.json
-# Thêm các file Prisma ở bước này để có thể generate trước khi build
-COPY ./prisma ./prisma
-RUN yarn prisma generate
+# Cài đặt OpenSSL trước khi chạy Prisma
+RUN apk add --no-cache openssl1.1-compat
+
+# Sao chép package.json, yarn.lock và cài dependencies
+COPY package.json yarn.lock .env ./  
+RUN yarn install --frozen-lockfile
+
+# Sao chép toàn bộ source code
+COPY . .
+
+# Tạo Prisma Client
+RUN npx prisma generate
+
+# Biên dịch code TypeScript
 RUN yarn build
 
-FROM node:18-alpine as modules
+FROM node:18-alpine
 
 WORKDIR /app
-COPY ./package.json ./yarn.lock ./
-RUN yarn config set network-timeout 600000 -g && yarn install --production
-COPY ./prisma ./prisma
-RUN yarn prisma generate
 
-FROM node:18-alpine as runner
-ARG NODE_ENV=production
-ENV NODE_ENV=${NODE_ENV}
-
-WORKDIR /app
-COPY ./package.json ./yarn.lock ./
-COPY ./prisma ./prisma
-COPY --from=modules /app/node_modules ./node_modules
+# Sao chép các file cần thiết từ builder
+COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/package.json ./  
+COPY --from=builder /app/.env ./  
+COPY --from=builder /app/prisma ./prisma  
 
-ENV PATH /app/node_modules/.bin:$PATH
-RUN chown -R 1001:1001 /app
+# Chạy migrations khi container start
+RUN apk add --no-cache openssl1.1-compat
+RUN npx prisma migrate deploy  
 
-USER 1001
+EXPOSE 3000  
 
-EXPOSE 3000
 CMD ["node", "dist/main"]
